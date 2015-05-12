@@ -819,6 +819,7 @@ mutual
  renderPretty rfrac w x
      = best 0 0 (Cons 0 x Nil)
      where
+      mutual
        -- r : the ribbon width in characters
        r : Int
        r  = max 0 (min w (cast (cast w * rfrac)))
@@ -831,7 +832,7 @@ mutual
        best n k (Cons i d ds)
          = case d of
              Empty       => best n k ds
-             Char c      => let k' = k+1 in SChar c (best n k' ds)
+             Char' c     => let k' = k+1 in SChar c (best n k' ds)
              Text l s    => let k' = k+l in SText l s (best n k' ds)
              Line _      => SLine i (best i i ds)
              Cat x y     => best n k (Cons i x (Cons i y ds))
