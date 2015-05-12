@@ -523,11 +523,12 @@ mutual
  double : Double -> Doc
  double d        = text (show d)
 
+{-
  -- | The document @(rational r)@ shows the literal rational @r@ using
  -- 'text'.
  rational : Rational -> Doc
  rational r      = text (show r)
-
+-}
 
  -----------------------------------------------------------
  -- overloading "pretty"
