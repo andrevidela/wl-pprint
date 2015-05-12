@@ -875,6 +875,7 @@ mutual
  renderCompact x
      = scan 0 [x]
      where
+       scan : Int -> List Doc -> SimpleDoc
        scan _ []     = SEmpty
        scan k (d::ds) = case d of
                          Empty       => scan k ds
