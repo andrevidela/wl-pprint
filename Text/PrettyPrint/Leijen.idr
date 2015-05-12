@@ -574,8 +574,8 @@ mutual
  instance Pretty Float where
    pretty f      = float f
 
- instance Pretty Double where
-   pretty d      = double d
+-- instance Pretty Double where
+--   pretty d      = double d
 
 
  --instance Pretty Rational where
