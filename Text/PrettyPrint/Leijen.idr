@@ -275,7 +275,7 @@ mutual
  -- | The document @(hsep xs)@ concatenates all documents @xs@
  -- horizontally with @(\<+\>)@.
  hsep : List Doc -> Doc
- hsep            = fold (<+>)
+ hsep            = fold (Text.PrettyPrint.Leijen.(<+>))
 
 
  -- | The document @(vsep xs)@ concatenates all documents @xs@
