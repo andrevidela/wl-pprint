@@ -898,7 +898,7 @@ mutual
  displayS (SText _ s x)      = showString s . displayS x
  displayS (SLine i x)        = showString ('\n'::indentation i) . displayS x
 
-
+{-
  -- | @(displayIO handle simpleDoc)@ writes @simpleDoc@ to the file
  -- handle @handle@. This function is used for example by 'hPutDoc':
  --
@@ -911,7 +911,7 @@ mutual
        display (SChar c x)   = do{ hPutChar handle c; display x}
        display (SText _ s x) = do{ hPutStr handle s; display x}
        display (SLine i x)   = do{ hPutStr handle ('\n'::indentation i); display x}
-
+-}
 
  -----------------------------------------------------------
  -- default pretty printers: show, putDoc and hPutDoc
@@ -919,6 +919,7 @@ mutual
  instance Show Doc where
    showsPrec _ doc       = displayS (renderPretty 0.4 80 doc)
 
+{-
  -- | The action @(putDoc doc)@ pretty prints document @doc@ to the
  -- standard output, with a page width of 100 characters and a ribbon
  -- width of 40 characters.
@@ -945,7 +946,7 @@ mutual
  -- >          }
  hPutDoc : Handle -> Doc -> IO ()
  hPutDoc handle doc      = displayIO handle (renderPretty 0.4 80 doc)
-
+-}
 
 
  -----------------------------------------------------------
