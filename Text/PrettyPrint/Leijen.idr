@@ -851,6 +851,7 @@ mutual
        nicest n k x y    | (fits width x)  = x
        nicest n k x y    | otherwise       = y
                          where
+                           width : Int
                            width = min (w - k) (r - k + n)
 
  fits : Int -> SimpleDoc -> Bool
