@@ -111,6 +111,10 @@ module Text.PrettyPrint.Leijen {- (
 
         ) -}
 
+zipWithStreamL : (f : a -> b -> c) -> Stream a -> (r : List b) -> List c
+zipWithStreamL _ _         []        = []
+zipWithStreamL f (x :: xs) (y :: ys) = f x y :: zipWithStreamL f xs ys
+
 infixr 5 </>,<//>{-,<$>-},<$$>
 infixr 6 <>{-,<+>-}
 
@@ -213,7 +217,7 @@ mutual
      = case ds of
          []  => left <> right
          [d] => left <> d <> right
-         _   => align (cat (zipWith (<>) (left :: repeat sep) ds) <> right)
+         _   => align (cat (zipWithStreamL (<>) (left :: repeat sep) ds) <> right)
 
 
  -----------------------------------------------------------
@@ -495,10 +499,13 @@ mutual
  -- characters. It is used instead of 'text' whenever the text contains
  -- newline characters.
  string : String -> Doc
- string ""       = empty
- string ('\n'::s) = line <> string s
- string s        = case (span (/='\n') s) of
-                     (xs,ys) => text xs <> string ys
+ string = string' . unpack
+
+ string' : List Char -> Doc
+ string' []        = empty
+ string' ('\n'::s) = line <> string' s
+ string' s         = case (span (/='\n') s) of
+                      (xs,ys) => text (pack xs) <> string' ys
 
  bool : Bool -> Doc
  bool b          = text (show b)
@@ -556,7 +563,7 @@ mutual
 
  instance Pretty Char where
    pretty c      = char c
-   prettyList s  = string s
+   prettyList s  = string (pack s)
 
  instance Pretty Int where
    pretty i      = int i
@@ -735,7 +742,7 @@ mutual
  -- used.
  text : String -> Doc
  text ""         = Empty
- text s          = Text (length s) s
+ text s          = Text (cast (length s)) s
 
  -- | The @line@ document advances to the next line and indents to the
  -- current nesting level. Document @line@ behaves like @(text \" \")@
@@ -957,7 +964,7 @@ mutual
  -----------------------------------------------------------
  spaces : Int -> String
  spaces n        | (n <= 0)  = ""
- spaces n        | otherwise = replicate n ' '
+ spaces n        | otherwise = pack (replicate (cast n) ' ')
 
  indentation : Int -> String
  indentation n   = spaces n
