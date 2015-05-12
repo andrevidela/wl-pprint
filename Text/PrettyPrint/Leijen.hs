@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP #-}
+{-# OPTIONS_GHC -Wall -fno-warn-name-shadowing #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Text.PrettyPrint.Leijen
@@ -114,10 +114,6 @@ module Text.PrettyPrint.Leijen (
 
 import System.IO (Handle,hPutStr,hPutChar,stdout)
 
-#if MIN_VERSION_base(4,8,0)
-import Prelude hiding ((<$>))
-#endif
-
 infixr 5 </>,<//>,<$>,<$$>
 infixr 6 <>,<+>
 
@@ -210,8 +206,8 @@ encloseSep left right sep ds
 -- (If you want put the commas in front of their elements instead of
 -- at the end, you should use 'tupled' or, in general, 'encloseSep'.)
 punctuate :: Doc -> [Doc] -> [Doc]
-punctuate p []      = []
-punctuate p [d]     = [d]
+punctuate _ []      = []
+punctuate _ [d]     = [d]
 punctuate p (d:ds)  = (d <> p) : punctuate p ds
 
 
@@ -303,7 +299,8 @@ hcat            = fold (<>)
 vcat :: [Doc] -> Doc
 vcat            = fold (<$$>)
 
-fold f []       = empty
+fold :: (Doc -> Doc -> Doc) -> [Doc] -> Doc
+fold _ []       = empty
 fold f ds       = foldr1 f ds
 
 -- | The document @(x \<\> y)@ concatenates document @x@ and document
@@ -749,6 +746,7 @@ line            = Line False
 linebreak :: Doc
 linebreak       = Line True
 
+beside :: Doc -> Doc -> Doc
 beside x y      = Cat x y
 
 -- | The document @(nest i x)@ renders document @x@ with the current
@@ -783,7 +781,7 @@ flatten :: Doc -> Doc
 flatten (Cat x y)       = Cat (flatten x) (flatten y)
 flatten (Nest i x)      = Nest i (flatten x)
 flatten (Line break)    = if break then Empty else Text 1 " "
-flatten (Union x y)     = flatten x
+flatten (Union x _)     = flatten x
 flatten (Column f)      = Column (flatten . f)
 flatten (Nesting f)     = Nesting (flatten . f)
 flatten other           = other                     --Empty,Char,Text
@@ -815,12 +813,14 @@ renderPretty rfrac w x
     = best 0 0 (Cons 0 x Nil)
     where
       -- r :: the ribbon width in characters
+      r :: Int
       r  = max 0 (min w (round (fromIntegral w * rfrac)))
 
       -- best :: n = indentation of current line
       --         k = current column
       --        (ie. (k >= n) && (k - n == count of inserted characters)
-      best n k Nil      = SEmpty
+      best :: Int -> Int -> Docs -> SimpleDoc
+      best _ _ Nil      = SEmpty
       best n k (Cons i d ds)
         = case d of
             Empty       -> best n k ds
@@ -839,17 +839,18 @@ renderPretty rfrac w x
       --          n = indentation of current line, k = current column
       --          x and y, the (simple) documents to chose from.
       --          precondition: first lines of x are longer than the first lines of y.
+      nicest :: Int -> Int -> SimpleDoc -> SimpleDoc -> SimpleDoc
       nicest n k x y    | fits width x  = x
                         | otherwise     = y
                         where
                           width = min (w - k) (r - k + n)
 
-
-fits w x        | w < 0         = False
-fits w SEmpty                   = True
-fits w (SChar c x)              = fits (w - 1) x
-fits w (SText l s x)            = fits (w - l) x
-fits w (SLine i x)              = True
+fits :: Int -> SimpleDoc -> Bool
+fits w _        | w < 0         = False
+fits _ SEmpty                   = True
+fits w (SChar _ x)              = fits (w - 1) x
+fits w (SText l _ x)            = fits (w - l) x
+fits _ (SLine _ _)              = True
 
 
 -----------------------------------------------------------
@@ -867,15 +868,15 @@ renderCompact :: Doc -> SimpleDoc
 renderCompact x
     = scan 0 [x]
     where
-      scan k []     = SEmpty
+      scan _ []     = SEmpty
       scan k (d:ds) = case d of
                         Empty       -> scan k ds
                         Char c      -> let k' = k+1 in seq k' (SChar c (scan k' ds))
                         Text l s    -> let k' = k+l in seq k' (SText l s (scan k' ds))
                         Line _      -> SLine 0 (scan 0 ds)
                         Cat x y     -> scan k (x:y:ds)
-                        Nest j x    -> scan k (x:ds)
-                        Union x y   -> scan k (y:ds)
+                        Nest _ x    -> scan k (x:ds)
+                        Union _ y   -> scan k (y:ds)
                         Column f    -> scan k (f k:ds)
                         Nesting f   -> scan k (f 0:ds)
 
@@ -895,7 +896,7 @@ renderCompact x
 displayS :: SimpleDoc -> ShowS
 displayS SEmpty             = id
 displayS (SChar c x)        = showChar c . displayS x
-displayS (SText l s x)      = showString s . displayS x
+displayS (SText _ s x)      = showString s . displayS x
 displayS (SLine i x)        = showString ('\n':indentation i) . displayS x
 
 
@@ -909,7 +910,7 @@ displayIO handle simpleDoc
     where
       display SEmpty        = return ()
       display (SChar c x)   = do{ hPutChar handle c; display x}
-      display (SText l s x) = do{ hPutStr handle s; display x}
+      display (SText _ s x) = do{ hPutStr handle s; display x}
       display (SLine i x)   = do{ hPutStr handle ('\n':indentation i); display x}
 
 
@@ -917,7 +918,7 @@ displayIO handle simpleDoc
 -- default pretty printers: show, putDoc and hPutDoc
 -----------------------------------------------------------
 instance Show Doc where
-  showsPrec d doc       = displayS (renderPretty 0.4 80 doc)
+  showsPrec _ doc       = displayS (renderPretty 0.4 80 doc)
 
 -- | The action @(putDoc doc)@ pretty prints document @doc@ to the
 -- standard output, with a page width of 100 characters and a ribbon
@@ -953,9 +954,11 @@ hPutDoc handle doc      = displayIO handle (renderPretty 0.4 80 doc)
 -- "indentation" used to insert tabs but tabs seem to cause
 -- more trouble than they solve :-)
 -----------------------------------------------------------
+spaces :: Int -> String
 spaces n        | n <= 0    = ""
                 | otherwise = replicate n ' '
 
+indentation :: Int -> String
 indentation n   = spaces n
 
 --indentation n   | n >= 8    = '\t' : indentation (n-8)
