@@ -129,7 +129,7 @@ infixr 6 <>{-,<+>-}
 -- world
 -- @
 data Doc        = Empty
-                | Char Char             -- invariant: char is not '\n'
+                | Char' Char           -- invariant: char is not '\n'
                 | Text Int String      -- invariant: text doesn't contain '\n'
                 | Line Bool            -- True <=> when undone by group, do not insert a space
                 | Cat Doc Doc
@@ -167,14 +167,14 @@ mutual
  -- encloses them in square brackets. The documents are rendered
  -- horizontally if that fits the page. Otherwise they are aligned
  -- vertically. All comma separators are put in front of the elements.
- list :: [Doc] -> Doc
+ list : List Doc -> Doc
  list            = encloseSep lbracket rbracket comma
 
  -- | The document @(tupled xs)@ comma separates the documents @xs@ and
  -- encloses them in parenthesis. The documents are rendered
  -- horizontally if that fits the page. Otherwise they are aligned
  -- vertically. All comma separators are put in front of the elements.
- tupled :: [Doc] -> Doc
+ tupled : List Doc -> Doc
  tupled          = encloseSep lparen   rparen  comma
 
 
@@ -182,7 +182,7 @@ mutual
  -- semi colons and encloses them in braces. The documents are rendered
  -- horizontally if that fits the page. Otherwise they are aligned
  -- vertically. All semi colons are put in front of the elements.
- semiBraces :: [Doc] -> Doc
+ semiBraces : List Doc -> Doc
  semiBraces      = encloseSep lbrace   rbrace  semi
 
  -- | The document @(encloseSep l r sep xs)@ concatenates the documents
@@ -208,12 +208,12 @@ mutual
  --      ,200
  --      ,3000]
  -- @
- encloseSep :: Doc -> Doc -> Doc -> [Doc] -> Doc
+ encloseSep : Doc -> Doc -> Doc -> List Doc -> Doc
  encloseSep left right sep ds
      = case ds of
-         []  -> left <> right
-         [d] -> left <> d <> right
-         _   -> align (cat (zipWith (<>) (left : repeat sep) ds) <> right)
+         []  => left <> right
+         [d] => left <> d <> right
+         _   => align (cat (zipWith (<>) (left :: repeat sep) ds) <> right)
 
 
  -----------------------------------------------------------
@@ -244,10 +244,10 @@ mutual
  --
  -- (If you want put the commas in front of their elements instead of
  -- at the end, you should use 'tupled' or, in general, 'encloseSep'.)
- punctuate :: Doc -> [Doc] -> [Doc]
+ punctuate : Doc -> List Doc -> List Doc
  punctuate _ []      = []
  punctuate _ [d]     = [d]
- punctuate p (d:ds)  = (d <> p) : punctuate p ds
+ punctuate p (d::ds)  = (d <> p) :: punctuate p ds
 
 
  -----------------------------------------------------------
@@ -260,7 +260,7 @@ mutual
  -- @(\<$\>)@.
  --
  -- > sep xs  = group (vsep xs)
- sep :: [Doc] -> Doc
+ sep : List Doc -> Doc
  sep             = group . vsep
 
  -- | The document @(fillSep xs)@ concatenates documents @xs@
@@ -269,12 +269,12 @@ mutual
  -- @xs@.
  --
  -- > fillSep xs  = foldr (\<\/\>) empty xs
- fillSep :: [Doc] -> Doc
+ fillSep : List Doc -> Doc
  fillSep         = fold (</>)
 
  -- | The document @(hsep xs)@ concatenates all documents @xs@
  -- horizontally with @(\<+\>)@.
- hsep :: [Doc] -> Doc
+ hsep : List Doc -> Doc
  hsep            = fold (<+>)
 
 
@@ -308,7 +308,7 @@ mutual
  --      lay
  --      out
  -- @
- vsep :: [Doc] -> Doc
+ vsep : List Doc -> Doc
  vsep            = fold (<$>)
 
  -- | The document @(cat xs)@ concatenates all documents @xs@ either
@@ -316,7 +316,7 @@ mutual
  -- @(\<$$\>)@.
  --
  -- > cat xs  = group (vcat xs)
- cat :: [Doc] -> Doc
+ cat : List Doc -> Doc
  cat             = group . vcat
 
  -- | The document @(fillCat xs)@ concatenates documents @xs@
@@ -324,163 +324,163 @@ mutual
  -- a @linebreak@ and continues doing that for all documents in @xs@.
  --
  -- > fillCat xs  = foldr (\<\/\/\>) empty xs
- fillCat :: [Doc] -> Doc
+ fillCat : List Doc -> Doc
  fillCat         = fold (<//>)
 
  -- | The document @(hcat xs)@ concatenates all documents @xs@
  -- horizontally with @(\<\>)@.
- hcat :: [Doc] -> Doc
+ hcat : List Doc -> Doc
  hcat            = fold (<>)
 
  -- | The document @(vcat xs)@ concatenates all documents @xs@
  -- vertically with @(\<$$\>)@. If a 'group' undoes the line breaks
  -- inserted by @vcat@, all documents are directly concatenated.
- vcat :: [Doc] -> Doc
+ vcat : List Doc -> Doc
  vcat            = fold (<$$>)
 
- fold :: (Doc -> Doc -> Doc) -> [Doc] -> Doc
+ fold : (Doc -> Doc -> Doc) -> List Doc -> Doc
  fold _ []       = empty
  fold f ds       = foldr1 f ds
 
  -- | The document @(x \<\> y)@ concatenates document @x@ and document
  -- @y@. It is an associative operation having 'empty' as a left and
  -- right unit.  (infixr 6)
- (<>) :: Doc -> Doc -> Doc
+ (<>) : Doc -> Doc -> Doc
  x <> y          = x `beside` y
 
  -- | The document @(x \<+\> y)@ concatenates document @x@ and @y@ with a
  -- @space@ in between.  (infixr 6)
- (<+>) :: Doc -> Doc -> Doc
+ (<+>) : Doc -> Doc -> Doc
  x <+> y         = x <> space <> y
 
  -- | The document @(x \<\/\> y)@ concatenates document @x@ and @y@ with a
  -- 'softline' in between. This effectively puts @x@ and @y@ either
  -- next to each other (with a @space@ in between) or underneath each
  -- other. (infixr 5)
- (</>) :: Doc -> Doc -> Doc
+ (</>) : Doc -> Doc -> Doc
  x </> y         = x <> softline <> y
 
  -- | The document @(x \<\/\/\> y)@ concatenates document @x@ and @y@ with
  -- a 'softbreak' in between. This effectively puts @x@ and @y@ either
  -- right next to each other or underneath each other. (infixr 5)
- (<//>) :: Doc -> Doc -> Doc
+ (<//>) : Doc -> Doc -> Doc
  x <//> y        = x <> softbreak <> y
 
  -- | The document @(x \<$\> y)@ concatenates document @x@ and @y@ with a
  -- 'line' in between. (infixr 5)
- (<$>) :: Doc -> Doc -> Doc
+ (<$>) : Doc -> Doc -> Doc
  x <$> y         = x <> line <> y
 
  -- | The document @(x \<$$\> y)@ concatenates document @x@ and @y@ with
  -- a @linebreak@ in between. (infixr 5)
- (<$$>) :: Doc -> Doc -> Doc
+ (<$$>) : Doc -> Doc -> Doc
  x <$$> y        = x <> linebreak <> y
 
  -- | The document @softline@ behaves like 'space' if the resulting
  -- output fits the page, otherwise it behaves like 'line'.
  --
  -- > softline = group line
- softline :: Doc
+ softline : Doc
  softline        = group line
 
  -- | The document @softbreak@ behaves like 'empty' if the resulting
  -- output fits the page, otherwise it behaves like 'line'.
  --
  -- > softbreak  = group linebreak
- softbreak :: Doc
+ softbreak : Doc
  softbreak       = group linebreak
 
  -- | Document @(squotes x)@ encloses document @x@ with single quotes
  -- \"'\".
- squotes :: Doc -> Doc
+ squotes : Doc -> Doc
  squotes         = enclose squote squote
 
  -- | Document @(dquotes x)@ encloses document @x@ with double quotes
  -- '\"'.
- dquotes :: Doc -> Doc
+ dquotes : Doc -> Doc
  dquotes         = enclose dquote dquote
 
  -- | Document @(braces x)@ encloses document @x@ in braces, \"{\" and
  -- \"}\".
- braces :: Doc -> Doc
+ braces : Doc -> Doc
  braces          = enclose lbrace rbrace
 
  -- | Document @(parens x)@ encloses document @x@ in parenthesis, \"(\"
  -- and \")\".
- parens :: Doc -> Doc
+ parens : Doc -> Doc
  parens          = enclose lparen rparen
 
  -- | Document @(angles x)@ encloses document @x@ in angles, \"\<\" and
  -- \"\>\".
- angles :: Doc -> Doc
+ angles : Doc -> Doc
  angles          = enclose langle rangle
 
  -- | Document @(brackets x)@ encloses document @x@ in square brackets,
  -- \"[\" and \"]\".
- brackets :: Doc -> Doc
+ brackets : Doc -> Doc
  brackets        = enclose lbracket rbracket
 
  -- | The document @(enclose l r x)@ encloses document @x@ between
  -- documents @l@ and @r@ using @(\<\>)@.
  --
  -- > enclose l r x   = l <> x <> r
- enclose :: Doc -> Doc -> Doc -> Doc
+ enclose : Doc -> Doc -> Doc -> Doc
  enclose l r x   = l <> x <> r
 
  -- | The document @lparen@ contains a left parenthesis, \"(\".
- lparen :: Doc
+ lparen : Doc
  lparen          = char '('
  -- | The document @rparen@ contains a right parenthesis, \")\".
- rparen :: Doc
+ rparen : Doc
  rparen          = char ')'
  -- | The document @langle@ contains a left angle, \"\<\".
- langle :: Doc
+ langle : Doc
  langle          = char '<'
  -- | The document @rangle@ contains a right angle, \">\".
- rangle :: Doc
+ rangle : Doc
  rangle          = char '>'
  -- | The document @lbrace@ contains a left brace, \"{\".
- lbrace :: Doc
+ lbrace : Doc
  lbrace          = char '{'
  -- | The document @rbrace@ contains a right brace, \"}\".
- rbrace :: Doc
+ rbrace : Doc
  rbrace          = char '}'
  -- | The document @lbracket@ contains a left square bracket, \"[\".
- lbracket :: Doc
+ lbracket : Doc
  lbracket        = char '['
  -- | The document @rbracket@ contains a right square bracket, \"]\".
- rbracket :: Doc
+ rbracket : Doc
  rbracket        = char ']'
 
 
  -- | The document @squote@ contains a single quote, \"'\".
- squote :: Doc
+ squote : Doc
  squote          = char '\''
  -- | The document @dquote@ contains a double quote, '\"'.
- dquote :: Doc
+ dquote : Doc
  dquote          = char '"'
  -- | The document @semi@ contains a semi colon, \";\".
- semi :: Doc
+ semi : Doc
  semi            = char ';'
  -- | The document @colon@ contains a colon, \":\".
- colon :: Doc
+ colon : Doc
  colon           = char ':'
  -- | The document @comma@ contains a comma, \",\".
- comma :: Doc
+ comma : Doc
  comma           = char ','
  -- | The document @space@ contains a single space, \" \".
  --
  -- > x <+> y   = x <> space <> y
- space :: Doc
+ space : Doc
  space           = char ' '
  -- | The document @dot@ contains a single dot, \".\".
- dot :: Doc
+ dot : Doc
  dot             = char '.'
  -- | The document @backslash@ contains a back slash, \"\\\".
- backslash :: Doc
+ backslash : Doc
  backslash       = char '\\'
  -- | The document @equals@ contains an equal sign, \"=\".
- equals :: Doc
+ equals : Doc
  equals          = char '='
 
 
@@ -494,38 +494,38 @@ mutual
  -- using @line@ for newline characters and @char@ for all other
  -- characters. It is used instead of 'text' whenever the text contains
  -- newline characters.
- string :: String -> Doc
+ string : String -> Doc
  string ""       = empty
- string ('\n':s) = line <> string s
+ string ('\n'::s) = line <> string s
  string s        = case (span (/='\n') s) of
-                     (xs,ys) -> text xs <> string ys
+                     (xs,ys) => text xs <> string ys
 
- bool :: Bool -> Doc
+ bool : Bool -> Doc
  bool b          = text (show b)
 
  -- | The document @(int i)@ shows the literal integer @i@ using
  -- 'text'.
- int :: Int -> Doc
+ int : Int -> Doc
  int i           = text (show i)
 
  -- | The document @(integer i)@ shows the literal integer @i@ using
  -- 'text'.
- integer :: Integer -> Doc
+ integer : Integer -> Doc
  integer i       = text (show i)
 
  -- | The document @(float f)@ shows the literal float @f@ using
  -- 'text'.
- float :: Float -> Doc
+ float : Float -> Doc
  float f         = text (show f)
 
  -- | The document @(double d)@ shows the literal double @d@ using
  -- 'text'.
- double :: Double -> Doc
+ double : Double -> Doc
  double d        = text (show d)
 
  -- | The document @(rational r)@ shows the literal rational @r@ using
  -- 'text'.
- rational :: Rational -> Doc
+ rational : Rational -> Doc
  rational r      = text (show r)
 
 
@@ -537,11 +537,11 @@ mutual
  -- a => Pretty [a]@. In normal circumstances only the @pretty@ function
  -- is used.
  class Pretty a where
-   pretty        :: a -> Doc
-   prettyList    :: [a] -> Doc
+   pretty        : a -> Doc
+   prettyList    : List a -> Doc
    prettyList    = list . map pretty
 
- instance Pretty a => Pretty [a] where
+ instance Pretty a => Pretty (List a) where
    pretty        = prettyList
 
  instance Pretty Doc where
@@ -597,18 +597,18 @@ mutual
  -- variation of the previous output:
  --
  -- > ptype (name,tp)
- -- >        = fillBreak 6 (text name) <+> text "::" <+> text tp
+ -- >        = fillBreak 6 (text name) <+> text ":" <+> text tp
  --
  -- The output will now be:
  --
  -- @
- -- let empty  :: Doc
- --     nest   :: Int -> Doc -> Doc
+ -- let empty  : Doc
+ --     nest   : Int -> Doc -> Doc
  --     linebreak
- --            :: Doc
+ --            : Doc
  -- @
- fillBreak :: Int -> Doc -> Doc
- fillBreak f x   = width x (\w ->
+ fillBreak : Int -> Doc -> Doc
+ fillBreak f x   = width x (\w =>
                    if (w > f) then nest f linebreak
                               else text (spaces (f - w)))
 
@@ -624,24 +624,24 @@ mutual
  -- >          ,("linebreak","Doc")]
  -- >
  -- > ptype (name,tp)
- -- >        = fill 6 (text name) <+> text "::" <+> text tp
+ -- >        = fill 6 (text name) <+> text ":" <+> text tp
  -- >
  -- > test   = text "let" <+> align (vcat (map ptype types))
  --
  -- Which is layed out as:
  --
  -- @
- -- let empty  :: Doc
- --     nest   :: Int -> Doc -> Doc
- --     linebreak :: Doc
+ -- let empty  : Doc
+ --     nest   : Int -> Doc -> Doc
+ --     linebreak : Doc
  -- @
- fill :: Int -> Doc -> Doc
- fill f d        = width d (\w ->
+ fill : Int -> Doc -> Doc
+ fill f d        = width d (\w =>
                    if (w >= f) then empty
                                else text (spaces (f - w)))
 
- width :: Doc -> (Int -> Doc) -> Doc
- width d f       = column (\k1 -> d <> column (\k2 -> f (k2 - k1)))
+ width : Doc -> (Int -> Doc) -> Doc
+ width d f       = column (\k1 => d <> column (\k2 => f (k2 - k1)))
 
 
  -----------------------------------------------------------
@@ -661,7 +661,7 @@ mutual
  --     indents these
  --     words !
  -- @
- indent :: Int -> Doc -> Doc
+ indent : Int -> Doc -> Doc
  indent i d      = hang i (text (spaces i) <> d)
 
  -- | The hang combinator implements hanging indentation. The document
@@ -683,7 +683,7 @@ mutual
  -- The @hang@ combinator is implemented as:
  --
  -- > hang i x  = align (nest i x)
- hang :: Int -> Doc -> Doc
+ hang : Int -> Doc -> Doc
  hang i d        = align (nest i d)
 
  -- | The document @(align x)@ renders document @x@ with the nesting
@@ -703,9 +703,9 @@ mutual
  -- hi nice
  --    world
  -- @
- align :: Doc -> Doc
- align d         = column (\k ->
-                   nesting (\i -> nest (k - i) d))   --nesting might be negative :-)
+ align : Doc -> Doc
+ align d         = column (\k =>
+                   nesting (\i => nest (k - i) d))   --nesting might be negative :-)
 
 
 
@@ -718,37 +718,37 @@ mutual
  -- | The empty document is, indeed, empty. Although @empty@ has no
  -- content, it does have a \'height\' of 1 and behaves exactly like
  -- @(text \"\")@ (and is therefore not a unit of @\<$\>@).
- empty :: Doc
+ empty : Doc
  empty           = Empty
 
  -- | The document @(char c)@ contains the literal character @c@. The
  -- character shouldn't be a newline (@'\n'@), the function 'line'
  -- should be used for line breaks.
- char :: Char -> Doc
+ char : Char -> Doc
  char '\n'       = line
- char c          = Char c
+ char c          = Char' c
 
  -- | The document @(text s)@ contains the literal string @s@. The
  -- string shouldn't contain any newline (@'\n'@) characters. If the
  -- string contains newline characters, the function 'string' should be
  -- used.
- text :: String -> Doc
+ text : String -> Doc
  text ""         = Empty
  text s          = Text (length s) s
 
  -- | The @line@ document advances to the next line and indents to the
  -- current nesting level. Document @line@ behaves like @(text \" \")@
  -- if the line break is undone by 'group'.
- line :: Doc
+ line : Doc
  line            = Line False
 
  -- | The @linebreak@ document advances to the next line and indents to
  -- the current nesting level. Document @linebreak@ behaves like
  -- 'empty' if the line break is undone by 'group'.
- linebreak :: Doc
+ linebreak : Doc
  linebreak       = Line True
 
- beside :: Doc -> Doc -> Doc
+ beside : Doc -> Doc -> Doc
  beside x y      = Cat x y
 
  -- | The document @(nest i x)@ renders document @x@ with the current
@@ -764,11 +764,13 @@ mutual
  --   world
  -- !
  -- @
- nest :: Int -> Doc -> Doc
+ nest : Int -> Doc -> Doc
  nest i x        = Nest i x
 
- column, nesting :: (Int -> Doc) -> Doc
+ column : (Int -> Doc) -> Doc
  column f        = Column f
+
+ nesting : (Int -> Doc) -> Doc
  nesting f       = Nesting f
 
  -- | The @group@ combinator is used to specify alternative
@@ -776,10 +778,10 @@ mutual
  -- document @x@. The resulting line is added to the current line if
  -- that fits the page. Otherwise, the document @x@ is rendered without
  -- any changes.
- group :: Doc -> Doc
+ group : Doc -> Doc
  group x         = Union (flatten x) x
 
- flatten :: Doc -> Doc
+ flatten : Doc -> Doc
  flatten (Cat x y)       = Cat (flatten x) (flatten y)
  flatten (Nest i x)      = Nest i (flatten x)
  flatten (Line break)    = if break then Empty else Text 1 " "
@@ -805,45 +807,45 @@ mutual
  -- amount of non-indentation characters on a line. The parameter
  -- @ribbonfrac@ should be between @0.0@ and @1.0@. If it is lower or
  -- higher, the ribbon width will be 0 or @width@ respectively.
- renderPretty :: Float -> Int -> Doc -> SimpleDoc
+ renderPretty : Float -> Int -> Doc -> SimpleDoc
  renderPretty rfrac w x
      = best 0 0 (Cons 0 x Nil)
      where
-       -- r :: the ribbon width in characters
-       r :: Int
+       -- r : the ribbon width in characters
+       r : Int
        r  = max 0 (min w (round (fromIntegral w * rfrac)))
 
-       -- best :: n = indentation of current line
+       -- best : n = indentation of current line
        --         k = current column
        --        (ie. (k >= n) && (k - n == count of inserted characters)
-       best :: Int -> Int -> Docs -> SimpleDoc
+       best : Int -> Int -> Docs -> SimpleDoc
        best _ _ Nil      = SEmpty
        best n k (Cons i d ds)
          = case d of
-             Empty       -> best n k ds
-             Char c      -> let k' = k+1 in SChar c (best n k' ds)
-             Text l s    -> let k' = k+l in SText l s (best n k' ds)
-             Line _      -> SLine i (best i i ds)
-             Cat x y     -> best n k (Cons i x (Cons i y ds))
-             Nest j x    -> let i' = i+j in best n k (Cons i' x ds)
-             Union x y   -> nicest n k (best n k (Cons i x ds))
+             Empty       => best n k ds
+             Char c      => let k' = k+1 in SChar c (best n k' ds)
+             Text l s    => let k' = k+l in SText l s (best n k' ds)
+             Line _      => SLine i (best i i ds)
+             Cat x y     => best n k (Cons i x (Cons i y ds))
+             Nest j x    => let i' = i+j in best n k (Cons i' x ds)
+             Union x y   => nicest n k (best n k (Cons i x ds))
                                        (best n k (Cons i y ds))
 
-             Column f    -> best n k (Cons i (f k) ds)
-             Nesting f   -> best n k (Cons i (f i) ds)
+             Column f    => best n k (Cons i (f k) ds)
+             Nesting f   => best n k (Cons i (f i) ds)
 
-       --nicest :: r = ribbon width, w = page width,
+       --nicest : r = ribbon width, w = page width,
        --          n = indentation of current line, k = current column
        --          x and y, the (simple) documents to chose from.
        --          precondition: first lines of x are longer than the first lines of y.
-       nicest :: Int -> Int -> SimpleDoc -> SimpleDoc -> SimpleDoc
-       nicest n k x y    | fits width x  = x
-                         | otherwise     = y
+       nicest : Int -> Int -> SimpleDoc -> SimpleDoc -> SimpleDoc
+       nicest n k x y    | (fits width x)  = x
+       nicest n k x y    | otherwise       = y
                          where
                            width = min (w - k) (r - k + n)
 
- fits :: Int -> SimpleDoc -> Bool
- fits w _        | w < 0         = False
+ fits : Int -> SimpleDoc -> Bool
+ fits w _        | (w < 0)       = False
  fits _ SEmpty                   = True
  fits w (SChar _ x)              = fits (w - 1) x
  fits w (SText l _ x)            = fits (w - l) x
@@ -861,21 +863,21 @@ mutual
  -- renderer is very fast. The resulting output contains fewer
  -- characters than a pretty printed version and can be used for output
  -- that is read by other programs.
- renderCompact :: Doc -> SimpleDoc
+ renderCompact : Doc -> SimpleDoc
  renderCompact x
      = scan 0 [x]
      where
        scan _ []     = SEmpty
-       scan k (d:ds) = case d of
-                         Empty       -> scan k ds
-                         Char c      -> let k' = k+1 in SChar c (scan k' ds)
-                         Text l s    -> let k' = k+l in SText l s (scan k' ds)
-                         Line _      -> SLine 0 (scan 0 ds)
-                         Cat x y     -> scan k (x:y:ds)
-                         Nest _ x    -> scan k (x:ds)
-                         Union _ y   -> scan k (y:ds)
-                         Column f    -> scan k (f k:ds)
-                         Nesting f   -> scan k (f 0:ds)
+       scan k (d::ds) = case d of
+                         Empty       => scan k ds
+                         Char' c     => let k' = k+1 in SChar c (scan k' ds)
+                         Text l s    => let k' = k+l in SText l s (scan k' ds)
+                         Line _      => SLine 0 (scan 0 ds)
+                         Cat x y     => scan k (x::y::ds)
+                         Nest _ x    => scan k (x::ds)
+                         Union _ y   => scan k (y::ds)
+                         Column f    => scan k (f k::ds)
+                         Nesting f   => scan k (f 0::ds)
 
 
 
@@ -888,27 +890,27 @@ mutual
  -- rendering function and transforms it to a 'ShowS' type (for use in
  -- the 'Show' class).
  --
- -- > showWidth :: Int -> Doc -> String
+ -- > showWidth : Int -> Doc -> String
  -- > showWidth w x   = displayS (renderPretty 0.4 w x) ""
- displayS :: SimpleDoc -> ShowS
+ displayS : SimpleDoc -> ShowS
  displayS SEmpty             = id
  displayS (SChar c x)        = showChar c . displayS x
  displayS (SText _ s x)      = showString s . displayS x
- displayS (SLine i x)        = showString ('\n':indentation i) . displayS x
+ displayS (SLine i x)        = showString ('\n'::indentation i) . displayS x
 
 
  -- | @(displayIO handle simpleDoc)@ writes @simpleDoc@ to the file
  -- handle @handle@. This function is used for example by 'hPutDoc':
  --
  -- > hPutDoc handle doc  = displayIO handle (renderPretty 0.4 100 doc)
- displayIO :: Handle -> SimpleDoc -> IO ()
+ displayIO : Handle -> SimpleDoc -> IO ()
  displayIO handle simpleDoc
      = display simpleDoc
      where
        display SEmpty        = return ()
        display (SChar c x)   = do{ hPutChar handle c; display x}
        display (SText _ s x) = do{ hPutStr handle s; display x}
-       display (SLine i x)   = do{ hPutStr handle ('\n':indentation i); display x}
+       display (SLine i x)   = do{ hPutStr handle ('\n'::indentation i); display x}
 
 
  -----------------------------------------------------------
@@ -921,7 +923,7 @@ mutual
  -- standard output, with a page width of 100 characters and a ribbon
  -- width of 40 characters.
  --
- -- > main :: IO ()
+ -- > main : IO ()
  -- > main = do{ putDoc (text "hello" <+> text "world") }
  --
  -- Which would output
@@ -929,7 +931,7 @@ mutual
  -- @
  -- hello world
  -- @
- putDoc :: Doc -> IO ()
+ putDoc : Doc -> IO ()
  putDoc doc              = hPutDoc stdout doc
 
  -- | @(hPutDoc handle doc)@ pretty prints document @doc@ to the file
@@ -941,7 +943,7 @@ mutual
  -- >                            ["vertical","text"]))
  -- >          ; hClose handle
  -- >          }
- hPutDoc :: Handle -> Doc -> IO ()
+ hPutDoc : Handle -> Doc -> IO ()
  hPutDoc handle doc      = displayIO handle (renderPretty 0.4 80 doc)
 
 
@@ -951,11 +953,11 @@ mutual
  -- "indentation" used to insert tabs but tabs seem to cause
  -- more trouble than they solve :-)
  -----------------------------------------------------------
- spaces :: Int -> String
- spaces n        | n <= 0    = ""
-                 | otherwise = replicate n ' '
+ spaces : Int -> String
+ spaces n        | (n <= 0)  = ""
+ spaces n        | otherwise = replicate n ' '
 
- indentation :: Int -> String
+ indentation : Int -> String
  indentation n   = spaces n
 
  --indentation n   | n >= 8    = '\t' : indentation (n-8)
