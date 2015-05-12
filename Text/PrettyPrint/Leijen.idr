@@ -131,9 +131,9 @@ infixr 6 <>{-,<+>-}
 data Doc        = Empty
                 | Char Char             -- invariant: char is not '\n'
                 | Text Int String      -- invariant: text doesn't contain '\n'
-                | Line !Bool            -- True <=> when undone by group, do not insert a space
+                | Line Bool            -- True <=> when undone by group, do not insert a space
                 | Cat Doc Doc
-                | Nest !Int Doc
+                | Nest Int Doc
                 | Union Doc Doc         -- invariant: first lines of first doc longer than the first lines of the second doc
                 | Column  (Int -> Doc)
                 | Nesting (Int -> Doc)
@@ -149,12 +149,12 @@ data Doc        = Empty
 -- function from a @SimpleDoc@ to your own output format.
 data SimpleDoc  = SEmpty
                 | SChar Char SimpleDoc
-                | SText !Int String SimpleDoc
-                | SLine !Int SimpleDoc
+                | SText Int String SimpleDoc
+                | SLine Int SimpleDoc
 
 -- list of indentation/document pairs; saves an indirection over [(Int,Doc)]
 data Docs   = Nil
-            | Cons !Int Doc Docs
+            | Cons Int Doc Docs
 
 mutual
  -----------------------------------------------------------
@@ -821,11 +821,11 @@ mutual
        best n k (Cons i d ds)
          = case d of
              Empty       -> best n k ds
-             Char c      -> let k' = k+1 in seq k' (SChar c (best n k' ds))
-             Text l s    -> let k' = k+l in seq k' (SText l s (best n k' ds))
+             Char c      -> let k' = k+1 in SChar c (best n k' ds)
+             Text l s    -> let k' = k+l in SText l s (best n k' ds)
              Line _      -> SLine i (best i i ds)
              Cat x y     -> best n k (Cons i x (Cons i y ds))
-             Nest j x    -> let i' = i+j in seq i' (best n k (Cons i' x ds))
+             Nest j x    -> let i' = i+j in best n k (Cons i' x ds)
              Union x y   -> nicest n k (best n k (Cons i x ds))
                                        (best n k (Cons i y ds))
 
@@ -868,8 +868,8 @@ mutual
        scan _ []     = SEmpty
        scan k (d:ds) = case d of
                          Empty       -> scan k ds
-                         Char c      -> let k' = k+1 in seq k' (SChar c (scan k' ds))
-                         Text l s    -> let k' = k+l in seq k' (SText l s (scan k' ds))
+                         Char c      -> let k' = k+1 in SChar c (scan k' ds)
+                         Text l s    -> let k' = k+l in SText l s (scan k' ds)
                          Line _      -> SLine 0 (scan 0 ds)
                          Cat x y     -> scan k (x:y:ds)
                          Nest _ x    -> scan k (x:ds)
