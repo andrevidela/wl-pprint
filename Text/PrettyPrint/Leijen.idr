@@ -821,7 +821,7 @@ mutual
      where
        -- r : the ribbon width in characters
        r : Int
-       r  = max 0 (min w (round (fromIntegral w * rfrac)))
+       r  = max 0 (min w (cast (cast w * rfrac)))
 
        -- best : n = indentation of current line
        --         k = current column
