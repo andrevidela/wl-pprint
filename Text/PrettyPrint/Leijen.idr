@@ -114,6 +114,48 @@ module Text.PrettyPrint.Leijen {- (
 infixr 5 </>,<//>{-,<$>-},<$$>
 infixr 6 <>{-,<+>-}
 
+-- | The abstract data type @Doc@ represents pretty documents.
+--
+-- @Doc@ is an instance of the 'Show' class. @(show doc)@ pretty
+-- prints document @doc@ with a page width of 100 characters and a
+-- ribbon width of 40 characters.
+--
+-- > show (text "hello" <$> text "world")
+--
+-- Which would return the string \"hello\\nworld\", i.e.
+--
+-- @
+-- hello
+-- world
+-- @
+data Doc        = Empty
+                | Char Char             -- invariant: char is not '\n'
+                | Text !Int String      -- invariant: text doesn't contain '\n'
+                | Line !Bool            -- True <=> when undone by group, do not insert a space
+                | Cat Doc Doc
+                | Nest !Int Doc
+                | Union Doc Doc         -- invariant: first lines of first doc longer than the first lines of the second doc
+                | Column  (Int -> Doc)
+                | Nesting (Int -> Doc)
+
+
+-- | The data type @SimpleDoc@ represents rendered documents and is
+-- used by the display functions.
+--
+-- The @Int@ in @SText@ contains the length of the string. The @Int@
+-- in @SLine@ contains the indentation for that line. The library
+-- provides two default display functions 'displayS' and
+-- 'displayIO'. You can provide your own display function by writing a
+-- function from a @SimpleDoc@ to your own output format.
+data SimpleDoc  = SEmpty
+                | SChar Char SimpleDoc
+                | SText !Int String SimpleDoc
+                | SLine !Int SimpleDoc
+
+-- list of indentation/document pairs; saves an indirection over [(Int,Doc)]
+data Docs   = Nil
+            | Cons !Int Doc Docs
+
 
 -----------------------------------------------------------
 -- list, tupled and semiBraces pretty print a list of
@@ -671,43 +713,6 @@ align d         = column (\k ->
 -- Primitives
 -----------------------------------------------------------
 
--- | The abstract data type @Doc@ represents pretty documents.
---
--- @Doc@ is an instance of the 'Show' class. @(show doc)@ pretty
--- prints document @doc@ with a page width of 100 characters and a
--- ribbon width of 40 characters.
---
--- > show (text "hello" <$> text "world")
---
--- Which would return the string \"hello\\nworld\", i.e.
---
--- @
--- hello
--- world
--- @
-data Doc        = Empty
-                | Char Char             -- invariant: char is not '\n'
-                | Text !Int String      -- invariant: text doesn't contain '\n'
-                | Line !Bool            -- True <=> when undone by group, do not insert a space
-                | Cat Doc Doc
-                | Nest !Int Doc
-                | Union Doc Doc         -- invariant: first lines of first doc longer than the first lines of the second doc
-                | Column  (Int -> Doc)
-                | Nesting (Int -> Doc)
-
-
--- | The data type @SimpleDoc@ represents rendered documents and is
--- used by the display functions.
---
--- The @Int@ in @SText@ contains the length of the string. The @Int@
--- in @SLine@ contains the indentation for that line. The library
--- provides two default display functions 'displayS' and
--- 'displayIO'. You can provide your own display function by writing a
--- function from a @SimpleDoc@ to your own output format.
-data SimpleDoc  = SEmpty
-                | SChar Char SimpleDoc
-                | SText !Int String SimpleDoc
-                | SLine !Int SimpleDoc
 
 
 -- | The empty document is, indeed, empty. Although @empty@ has no
@@ -792,11 +797,6 @@ flatten other           = other                     --Empty,Char,Text
 -----------------------------------------------------------
 -- renderPretty: the default pretty printing algorithm
 -----------------------------------------------------------
-
--- list of indentation/document pairs; saves an indirection over [(Int,Doc)]
-data Docs   = Nil
-            | Cons !Int Doc Docs
-
 
 -- | This is the default pretty printer which is used by 'show',
 -- 'putDoc' and 'hPutDoc'. @(renderPretty ribbonfrac width x)@ renders
