@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wall -fno-warn-name-shadowing #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Text.PrettyPrint.Leijen
@@ -58,7 +57,7 @@
 --
 -- Full documentation available at <http://www.cs.uu.nl/~daan/download/pprint/pprint.html>.
 -----------------------------------------------------------
-module Text.PrettyPrint.Leijen (
+module Text.PrettyPrint.Leijen {- (
    -- * Documents
    Doc, putDoc, hPutDoc,
 
@@ -110,12 +109,10 @@ module Text.PrettyPrint.Leijen (
 
         , column, nesting, width
 
-        ) where
+        ) -}
 
-import System.IO (Handle,hPutStr,hPutChar,stdout)
-
-infixr 5 </>,<//>,<$>,<$$>
-infixr 6 <>,<+>
+infixr 5 </>,<//>{-,<$>-},<$$>
+infixr 6 <>{-,<+>-}
 
 
 -----------------------------------------------------------
