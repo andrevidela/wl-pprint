@@ -903,11 +903,11 @@ mutual
  --
  -- > showWidth : Int -> Doc -> String
  -- > showWidth w x   = displayS (renderPretty 0.4 w x) ""
- displayS : SimpleDoc -> ShowS
+ displayS : SimpleDoc -> String -> String
  displayS SEmpty             = id
- displayS (SChar c x)        = showChar c . displayS x
- displayS (SText _ s x)      = showString s . displayS x
- displayS (SLine i x)        = showString ('\n'::indentation i) . displayS x
+ displayS (SChar c x)        = strCons c . displayS x
+ displayS (SText _ s x)      = (s ++) . displayS x
+ displayS (SLine i x)        = (('\n' `strCons` indentation i) ++) . displayS x
 
 {-
  -- | @(displayIO handle simpleDoc)@ writes @simpleDoc@ to the file
@@ -928,7 +928,7 @@ mutual
  -- default pretty printers: show, putDoc and hPutDoc
  -----------------------------------------------------------
  instance Show Doc where
-   showsPrec _ doc       = displayS (renderPretty 0.4 80 doc)
+   show doc       = displayS (renderPretty 0.4 80 doc) ""
 
 {-
  -- | The action @(putDoc doc)@ pretty prints document @doc@ to the
