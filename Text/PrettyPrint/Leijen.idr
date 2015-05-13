@@ -74,8 +74,8 @@ indentation : Int -> String
 indentation n = spaces n
 
 
-infixr 5 </>,<//>{-,<$>-},<$$>
-infixr 6 <>{-,<+>-}
+infixr 5 |/|, |//|, |$|, |$$|
+infixr 6 |+|, |++|
 
 ||| The abstract data type `Doc` represents pretty documents.
 |||
@@ -83,7 +83,7 @@ infixr 6 <>{-,<+>-}
 ||| document `doc` with a page width of 100 characters and a ribbon
 ||| width of 40 characters.
 |||
-|||     > show (text "hello" <$> text "world")
+|||     > show (text "hello" |$| text "world")
 |||
 ||| Which would return the string "hello\nworld", i.e.
 |||
@@ -126,7 +126,7 @@ data Docs   = Nil
 
 -- | The empty document is, indeed, empty. Although `empty` has no
 ||| content, it does have a 'height' of 1 and behaves exactly like
-||| `(text "")` (and is therefore not a unit of `<$>`).
+||| `(text "")` (and is therefore not a unit of `|$|`).
 empty : Doc
 empty           = Empty
 
@@ -167,7 +167,7 @@ beside x y      = Cat x y
 ||| indentation level increased by i (See also 'hang', 'align' and
 ||| 'indent').
 |||
-||| > nest 2 (text "hello" <$> text "world") <$> text "!"
+||| > nest 2 (text "hello" |$| text "world") |$| text "!"
 |||
 ||| outputs as:
 |||
@@ -213,9 +213,9 @@ group x         = Union (flatten x) x
 ||| As an example, we will put a document right above another one,
 ||| regardless of the current nesting level:
 |||
-||| > x $$ y  = align (x <$> y)
+||| > x $$ y  = align (x |$| y)
 |||
-||| > test    = text "hi" <+> (text "nice" $$ text "world")
+||| > test    = text "hi" |++| (text "nice" $$ text "world")
 |||
 ||| which will be layed out as:
 |||
@@ -314,7 +314,7 @@ comma : Doc
 comma           = char ','
 ||| The document `space` contains a single space, " ".
 |||
-||| > x <+> y   = x <> space <> y
+||| > x |++| y   = x |+| space |+| y
 space : Doc
 space           = char ' '
 ||| The document `dot` contains a single dot, ".".
@@ -351,39 +351,39 @@ softline        = group line
 softbreak : Doc
 softbreak       = group linebreak
 
-||| The document `(x <> y)` concatenates document `x` and document
+||| The document `(x |+| y)` concatenates document `x` and document
 ||| `y`. It is an associative operation having 'empty' as a left and
 ||| right unit.
-(<>) : Doc -> Doc -> Doc
-x <> y          = x `beside` y
+(|+|) : Doc -> Doc -> Doc
+x |+| y          = x `beside` y
 
-||| The document `(x <+> y)` concatenates document `x` and `y` with a
+||| The document `(x |++| y)` concatenates document `x` and `y` with a
 ||| `space` in between.
-(<+>) : Doc -> Doc -> Doc
-x <+> y         = x <> space <> y
+(|++|) : Doc -> Doc -> Doc
+x |++| y         = x |+| space |+| y
 
-||| The document `(x </> y)` concatenates document `x` and `y` with a
+||| The document `(x |/| y)` concatenates document `x` and `y` with a
 ||| 'softline' in between. This effectively puts `x` and `y` either
 ||| next to each other (with a `space` in between) or underneath each
 ||| other.
-(</>) : Doc -> Doc -> Doc
-x </> y         = x <> softline <> y
+(|/|) : Doc -> Doc -> Doc
+x |/| y         = x |+| softline |+| y
 
-||| The document `(x <//> y)` concatenates document `x` and `y` with
+||| The document `(x |//| y)` concatenates document `x` and `y` with
 ||| a 'softbreak' in between. This effectively puts `x` and `y` either
 ||| right next to each other or underneath each other.
-(<//>) : Doc -> Doc -> Doc
-x <//> y        = x <> softbreak <> y
+(|//|) : Doc -> Doc -> Doc
+x |//| y        = x |+| softbreak |+| y
 
-||| The document `(x <$> y)` concatenates document `x` and `y` with a
+||| The document `(x |$| y)` concatenates document `x` and `y` with a
 ||| `line` in between.
-(<$>) : Doc -> Doc -> Doc
-x <$> y         = x <> line <> y
+(|$|) : Doc -> Doc -> Doc
+x |$| y         = x |+| line |+| y
 
-||| The document `(x <$$> y)` concatenates document `x` and `y` with
+||| The document `(x |$$| y)` concatenates document `x` and `y` with
 ||| a `linebreak` in between.
-(<$$>) : Doc -> Doc -> Doc
-x <$$> y        = x <> linebreak <> y
+(|$$|) : Doc -> Doc -> Doc
+x |$$| y        = x |+| linebreak |+| y
 
 ||| Fold a list of documents using some combining operator.
 |||
@@ -395,13 +395,13 @@ fold f (d::ds)  = f d (fold f ds)
 
 
 ||| The document `(vsep xs)` concatenates all documents `xs`
-||| vertically with `(<$>)`. If a 'group' undoes the line breaks
+||| vertically with `(|$|)`. If a 'group' undoes the line breaks
 ||| inserted by `vsep`, all documents are separated with a space.
 |||
 ||| ```
 ||| someText = map text (words ("text to lay out"))
 |||
-||| test     = text "some" <+> vsep someText
+||| test     = text "some" |++| vsep someText
 ||| ```
 |||
 ||| This is layed out as:
@@ -417,7 +417,7 @@ fold f (d::ds)  = f d (fold f ds)
 ||| their first element
 |||
 ||| ```
-||| test     = text "some" <+> align (vsep someText)
+||| test     = text "some" |++| align (vsep someText)
 ||| ```
 |||
 ||| Which is printed as:
@@ -429,11 +429,11 @@ fold f (d::ds)  = f d (fold f ds)
 |||      out
 ||| ```
 vsep : List Doc -> Doc
-vsep            = fold (<$>)
+vsep            = fold (|$|)
 
 ||| The document `(sep xs)` concatenates all documents `xs` either
-||| horizontally with `(<+>)`, if it fits the page, or vertically with
-||| `(<$>)`.
+||| horizontally with `(|++|)`, if it fits the page, or vertically with
+||| `(|$|)`.
 |||
 ||| ```
 ||| sep xs  = group (vsep xs)
@@ -442,36 +442,36 @@ sep : List Doc -> Doc
 sep             = group . vsep
 
 ||| The document `(fillSep xs)` concatenates documents `xs`
-||| horizontally with `(<+>)` as long as its fits the page, than
+||| horizontally with `(|++|)` as long as its fits the page, than
 ||| inserts a `line` and continues doing that for all documents in
 ||| `xs`.
 |||
 ||| ```
-||| fillSep xs  = foldr (</>) empty xs
+||| fillSep xs  = foldr (|/|) empty xs
 ||| ```
 fillSep : List Doc -> Doc
-fillSep         = fold (</>)
+fillSep         = fold (|/|)
 
 ||| The document `(hsep xs)` concatenates all documents `xs`
-||| horizontally with `(<+>)`.
+||| horizontally with `(|++|)`.
 hsep : List Doc -> Doc
-hsep            = fold (Text.PrettyPrint.Leijen.(<+>))
+hsep            = fold (Text.PrettyPrint.Leijen.(|++|))
 
 
 ||| The document `(hcat xs)` concatenates all documents `xs`
-||| horizontally with `(<>)`.
+||| horizontally with `(|+|)`.
 hcat : List Doc -> Doc
-hcat            = fold (<>)
+hcat            = fold (|+|)
 
 ||| The document `(vcat xs)` concatenates all documents `xs`
-||| vertically with `(<$$>)`. If a `group` undoes the line breaks
+||| vertically with `(|$$|)`. If a `group` undoes the line breaks
 ||| inserted by `vcat`, all documents are directly concatenated.
 vcat : List Doc -> Doc
-vcat            = fold (<$$>)
+vcat            = fold (|$$|)
 
 ||| The document `(cat xs)` concatenates all documents `xs` either
-||| horizontally with `(<>)`, if it fits the page, or vertically with
-||| `(<$$>)`.
+||| horizontally with `(|+|)`, if it fits the page, or vertically with
+||| `(|$$|)`.
 |||
 ||| ```
 ||| cat xs  = group (vcat xs)
@@ -480,23 +480,23 @@ cat : List Doc -> Doc
 cat             = group . vcat
 
 ||| The document `(fillCat xs)` concatenates documents `xs`
-||| horizontally with `(<>)` as long as its fits the page, than inserts
+||| horizontally with `(|+|)` as long as its fits the page, than inserts
 ||| a `linebreak` and continues doing that for all documents in `xs`.
 |||
 ||| ```
-||| fillCat xs  = foldr (<//>) empty xs
+||| fillCat xs  = foldr (|//|) empty xs
 ||| ```
 fillCat : List Doc -> Doc
-fillCat         = fold (<//>)
+fillCat         = fold (|//|)
 
 ||| The document `(enclose l r x)` encloses document `x` between
-||| documents `l` and `r` using `(<>)`.
+||| documents `l` and `r` using `(|+|)`.
 |||
 ||| ```
-||| enclose l r x   = l <> x <> r
+||| enclose l r x   = l |+| x |+| r
 ||| ```
 enclose : Doc -> Doc -> Doc -> Doc
-enclose l r x   = l <> x <> r
+enclose l r x   = l |+| x |+| r
 
 ||| Document `(squotes x)` encloses document `x` with single quotes
 ||| "\'".
@@ -542,7 +542,7 @@ brackets        = enclose lbracket rbracket
 ||| defined with `encloseSep`:
 |||
 ||| > list xs = encloseSep lbracket rbracket comma xs
-||| > test    = text "list" <+> (list (map int [10,200,3000]))
+||| > test    = text "list" |++| (list (map int [10,200,3000]))
 |||
 ||| Which is layed out with a page width of 20 as:
 |||
@@ -595,7 +595,7 @@ semiBraces      = encloseSep lbrace   rbrace  semi
 
 
 -----------------------------------------------------------
--- punctuate p [d1,d2,...,dn] => [d1 <> p,d2 <> p, ... ,dn]
+-- punctuate p [d1,d2,...,dn] => [d1 |+| p,d2 |+| p, ... ,dn]
 -----------------------------------------------------------
 
 
@@ -627,24 +627,17 @@ semiBraces      = encloseSep lbrace   rbrace  semi
 punctuate : Doc -> List Doc -> List Doc
 punctuate _ []      = []
 punctuate _ [d]     = [d]
-punctuate p (d::ds)  = (d <> p) :: punctuate p ds
-
-
-
-
-
-
+punctuate p (d::ds)  = (d |+| p) :: punctuate p ds
 
 -----------------------------------------------------------
 -- Combinators for prelude types
 -----------------------------------------------------------
 
--- string is like "text" but replaces '\n' by "line"
 private
 string' : List Char -> Doc
 string' []        = empty
-string' ('\n'::s) = line <> string' s
-string' (c::s)    = char c <> string' s
+string' ('\n'::s) = line |+| string' s
+string' (c::s)    = char c |+| string' s
 
 ||| The document `(string s)` concatenates all characters in `s`
 ||| using `line` for newline characters and `char` for all other
@@ -744,7 +737,7 @@ instance Pretty a => Pretty (Maybe a) where
 -----------------------------------------------------------
 
 width : Doc -> (Int -> Doc) -> Doc
-width d f       = column (\k1 => d <> column (\k2 => f (k2 - k1)))
+width d f       = column (\k1 => d |+| column (\k2 => f (k2 - k1)))
 
 ||| The document `(fillBreak i x)` first renders document `x`. It
 ||| than appends `space`s until the width is equal to `i`. If the
@@ -754,7 +747,7 @@ width d f       = column (\k1 => d <> column (\k2 => f (k2 - k1)))
 ||| variation of the previous output:
 |||
 ||| > ptype (name,tp)
-||| >        = fillBreak 6 (text name) <+> text ":" <+> text tp
+||| >        = fillBreak 6 (text name) |++| text ":" |++| text tp
 |||
 ||| The output will now be:
 |||
@@ -781,9 +774,9 @@ fillBreak f x   = width x (\w =>
 ||| >          ,("linebreak","Doc")]
 ||| >
 ||| > ptype (name,tp)
-||| >        = fill 6 (text name) <+> text ":" <+> text tp
+||| >        = fill 6 (text name) |++| text ":" |++| text tp
 ||| >
-||| > test   = text "let" <+> align (vcat (map ptype types))
+||| > test   = text "let" |++| align (vcat (map ptype types))
 |||
 ||| Which is layed out as:
 |||
@@ -939,7 +932,7 @@ instance Show Doc where
 ||| width of 40 characters.
 |||
 ||| > main : IO ()
-||| > main = do{ putDoc (text "hello" <+> text "world") }
+||| > main = do{ putDoc (text "hello" |++| text "world") }
 |||
 ||| Which would output
 |||
