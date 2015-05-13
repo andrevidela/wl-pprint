@@ -53,6 +53,7 @@ module Text.PrettyPrint.Leijen {- (
         ) -}
 
 %access public
+%default total
 
 ||| Zip a Stream and a List together.
 private
@@ -390,7 +391,7 @@ x <$$> y        = x <> linebreak <> y
 ||| @ ds the documents to combine
 fold : (f : Doc -> Doc -> Doc) -> (ds : List Doc) -> Doc
 fold _ []       = empty
-fold f ds       = foldr1 f ds
+fold f (d::ds)  = f d (fold f ds)
 
 
 ||| The document `(vsep xs)` concatenates all documents `xs`
@@ -639,18 +640,18 @@ punctuate p (d::ds)  = (d <> p) :: punctuate p ds
 -----------------------------------------------------------
 
 -- string is like "text" but replaces '\n' by "line"
+private
+string' : List Char -> Doc
+string' []        = empty
+string' ('\n'::s) = line <> string' s
+string' (c::s)    = char c <> string' s
 
 ||| The document `(string s)` concatenates all characters in `s`
 ||| using `line` for newline characters and `char` for all other
 ||| characters. It is used instead of 'text' whenever the text contains
 ||| newline characters.
 string : String -> Doc
-string = string' . unpack
-  where string' : List Char -> Doc
-        string' []        = empty
-        string' ('\n'::s) = line <> string' s
-        string' s         = case (span (/='\n') s) of
-                             (xs,ys) => text (pack xs) <> string' ys
+string str = string' (unpack str)
 
 bool : Bool -> Doc
 bool b          = text (show b)
@@ -819,6 +820,7 @@ fits w (SLine _ _)              = if w < 0 then False else True
 ||| amount of non-indentation characters on a line. The parameter
 ||| `ribbonfrac` should be between `0.0` and `1.0`. If it is lower or
 ||| higher, the ribbon width will be 0 or `width` respectively.
+covering
 renderPretty : Float -> Int -> Doc -> SimpleDoc
 renderPretty rfrac w x
     = best 0 0 (Cons 0 x Nil)
@@ -840,6 +842,7 @@ renderPretty rfrac w x
      -- best : n = indentation of current line
      --         k = current column
      --        (ie. (k >= n) && (k - n == count of inserted characters)
+     covering
      best : Int -> Int -> Docs -> SimpleDoc
      best _ _ Nil      = SEmpty
      best n k (Cons i d ds)
@@ -871,10 +874,12 @@ renderPretty rfrac w x
 ||| renderer is very fast. The resulting output contains fewer
 ||| characters than a pretty printed version and can be used for output
 ||| that is read by other programs.
+covering
 renderCompact : Doc -> SimpleDoc
 renderCompact x
     = scan 0 [x]
     where
+      covering
       scan : Int -> List Doc -> SimpleDoc
       scan _ []     = SEmpty
       scan k (d::ds) = case d of
