@@ -797,13 +797,16 @@ fill f d        = width d (\w =>
                               else text (spaces (f - w)))
 
 
-
-
-
-
 -----------------------------------------------------------
 -- Renderers
 -----------------------------------------------------------
+
+private
+fits : Int -> SimpleDoc -> Bool
+fits w SEmpty                   = if w < 0 then False else True
+fits w (SChar _ x)              = if w < 0 then False else fits (w - 1) x
+fits w (SText l _ x)            = if w < 0 then False else fits (w - l) x
+fits w (SLine _ _)              = if w < 0 then False else True
 
 -----------------------------------------------------------
 -- renderPretty: the default pretty printing algorithm
@@ -820,47 +823,41 @@ renderPretty : Float -> Int -> Doc -> SimpleDoc
 renderPretty rfrac w x
     = best 0 0 (Cons 0 x Nil)
     where
-     mutual
-      -- r : the ribbon width in characters
-      r : Int
-      r  = max 0 (min w (cast (cast w * rfrac)))
+     ||| the ribbon width in characters
+     r : Int
+     r  = max 0 (min w (cast (cast w * rfrac)))
 
-      -- best : n = indentation of current line
-      --         k = current column
-      --        (ie. (k >= n) && (k - n == count of inserted characters)
-      best : Int -> Int -> Docs -> SimpleDoc
-      best _ _ Nil      = SEmpty
-      best n k (Cons i d ds)
-        = case d of
-            Empty       => best n k ds
-            Char' c     => let k' = k+1 in SChar c (best n k' ds)
-            Text l s    => let k' = k+l in SText l s (best n k' ds)
-            Line _      => SLine i (best i i ds)
-            Cat x y     => best n k (Cons i x (Cons i y ds))
-            Nest j x    => let i' = i+j in best n k (Cons i' x ds)
-            Union x y   => nicest n k (best n k (Cons i x ds))
-                                      (best n k (Cons i y ds))
+     --nicest : r = ribbon width, w = page width,
+     --          n = indentation of current line, k = current column
+     --          x and y, the (simple) documents to chose from.
+     --          precondition: first lines of x are longer than the first lines of y.
+     nicest : Int -> Int -> SimpleDoc -> SimpleDoc -> SimpleDoc
+     nicest n k x y =
+       let width = min (w - k) (r - k + n) in
+       if fits width x then x else y
 
-            Column f    => best n k (Cons i (f k) ds)
-            Nesting f   => best n k (Cons i (f i) ds)
 
-      --nicest : r = ribbon width, w = page width,
-      --          n = indentation of current line, k = current column
-      --          x and y, the (simple) documents to chose from.
-      --          precondition: first lines of x are longer than the first lines of y.
-      nicest : Int -> Int -> SimpleDoc -> SimpleDoc -> SimpleDoc
-      nicest n k x y    | (fits width x)  = x
-      nicest n k x y    | otherwise       = y
-                        where
-                          width : Int
-                          width = min (w - k) (r - k + n)
+     -- best : n = indentation of current line
+     --         k = current column
+     --        (ie. (k >= n) && (k - n == count of inserted characters)
+     best : Int -> Int -> Docs -> SimpleDoc
+     best _ _ Nil      = SEmpty
+     best n k (Cons i d ds)
+       = case d of
+           Empty       => best n k ds
+           Char' c     => let k' = k+1 in SChar c (best n k' ds)
+           Text l s    => let k' = k+l in SText l s (best n k' ds)
+           Line _      => SLine i (best i i ds)
+           Cat x y     => best n k (Cons i x (Cons i y ds))
+           Nest j x    => let i' = i+j in best n k (Cons i' x ds)
+           Union x y   => nicest n k (best n k (Cons i x ds))
+                                     (best n k (Cons i y ds))
 
-fits : Int -> SimpleDoc -> Bool
-fits w _        | (w < 0)       = False
-fits _ SEmpty                   = True
-fits w (SChar _ x)              = fits (w - 1) x
-fits w (SText l _ x)            = fits (w - l) x
-fits _ (SLine _ _)              = True
+           Column f    => best n k (Cons i (f k) ds)
+           Nesting f   => best n k (Cons i (f i) ds)
+
+
+
 
 
 -----------------------------------------------------------
