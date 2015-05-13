@@ -670,6 +670,24 @@ rational : Rational -> Doc
 rational r      = text (show r)
 -}
 
+-----------------------------------------------------------
+-- Useful instances
+-----------------------------------------------------------
+
+||| Note that this operator is not associative with respect to
+||| propositional equality of the underlying Doc syntax tree, but
+||| rather with respect to the equality of the result of rendering. So
+||| it's "morally" a `Semigroup`.
+instance Semigroup Doc where
+  (<+>) = beside
+
+||| Note that the neutral element is not a left and right unit with
+||| respect to propositional equality of the underlying Doc syntax
+||| tree, but rather with respect to the equality of the result of
+||| rendering. So it's "morally" a `Monoid`.
+instance Monoid Doc where
+  neutral = empty
+
 
 -----------------------------------------------------------
 -- semi primitive: fill and fillBreak
