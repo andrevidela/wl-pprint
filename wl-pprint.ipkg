@@ -1,0 +1,5 @@
+package wlpprint
+
+modules = Text.PrettyPrint.Leijen, Text.PrettyPrint.Leijen.Class, Text.PrettyPrint.Leijen.Test
+
+tests = Text.PrettyPrint.Leijen.Test.runTest
