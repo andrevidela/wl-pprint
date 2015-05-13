@@ -1,56 +1,5 @@
-module Text.PrettyPrint.Leijen {- (
-   -- * Documents
-   Doc, putDoc, hPutDoc,
-
-   -- * Basic combinators
-   empty, char, text, (<>), nest, line, linebreak, group, softline,
-   softbreak,
-
-   -- * Alignment
-   --
-   -- The combinators in this section can not be described by Wadler's
-   -- original combinators. They align their output relative to the
-   -- current output position - in contrast to @nest@ which always
-   -- aligns to the current nesting level. This deprives these
-   -- combinators from being `optimal'. In practice however they
-   -- prove to be very useful. The combinators in this section should
-   -- be used with care, since they are more expensive than the other
-   -- combinators. For example, @align@ shouldn't be used to pretty
-   -- print all top-level declarations of a language, but using @hang@
-   -- for let expressions is fine.
-   align, hang, indent, encloseSep, list, tupled, semiBraces,
-
-   -- * Operators
-   (<+>), (<$>), (</>), (<$$>), (<//>),
-
-   -- * List combinators
-   hsep, vsep, fillSep, sep, hcat, vcat, fillCat, cat, punctuate,
-
-   -- * Fillers
-   fill, fillBreak,
-
-   -- * Bracketing combinators
-   enclose, squotes, dquotes, parens, angles, braces, brackets,
-
-   -- * Character documents
-   lparen, rparen, langle, rangle, lbrace, rbrace, lbracket, rbracket,
-   squote, dquote, semi, colon, comma, space, dot, backslash, equals,
-
-   -- * Primitive type documents
-   string, int, integer, float, double, rational,
-
-   -- * Pretty class
-   Pretty(..),
-
-   -- * Rendering
-   SimpleDoc(..), renderPretty, renderCompact, displayS, displayIO
-
-   -- * Undocumented
-        , bool
-
-        , column, nesting, width
-
-        ) -}
+||| An Idris port of the Wadler-Leijen pretty-printer.
+module Text.PrettyPrint.Leijen
 
 %access public
 %default total
@@ -205,6 +154,17 @@ group x         = Union (flatten x) x
 -----------------------------------------------------------
 -- semi primitive: Alignment and indentation
 -----------------------------------------------------------
+
+-- The combinators in this section can not be described by Wadler's
+-- original combinators. They align their output relative to the
+-- current output position - in contrast to `nest` which always
+-- aligns to the current nesting level. This deprives these
+-- combinators from being `optimal'. In practice however they
+-- prove to be very useful. The combinators in this section should
+-- be used with care, since they are more expensive than the other
+-- combinators. For example, `align` shouldn't be used to pretty
+-- print all top-level declarations of a language, but using `hang`
+-- for let expressions is fine.
 
 ||| The document `(align x)` renders document `x` with the nesting
 ||| level set to the current column. It is used for example to
@@ -675,61 +635,6 @@ double d        = text (show d)
 rational : Rational -> Doc
 rational r      = text (show r)
 -}
-
------------------------------------------------------------
--- overloading "pretty"
------------------------------------------------------------
-
-||| The member `prettyList` is only used to define the `instance Pretty
-||| a => Pretty [a]`. In normal circumstances only the `pretty` function
-||| is used.
-class Pretty a where
-  pretty        : a -> Doc
-  prettyList    : List a -> Doc
-  prettyList    = list . map pretty
-
-instance Pretty a => Pretty (List a) where
-  pretty        = prettyList
-
-instance Pretty Doc where
-  pretty        = id
-
-instance Pretty () where
-  pretty ()     = text "()"
-
-instance Pretty Bool where
-  pretty b      = bool b
-
-instance Pretty Char where
-  pretty c      = char c
-  prettyList s  = string (pack s)
-
-instance Pretty Int where
-  pretty i      = int i
-
-instance Pretty Integer where
-  pretty i      = integer i
-
-instance Pretty Float where
-  pretty f      = float f
-
--- instance Pretty Double where
---   pretty d      = double d
-
-
---instance Pretty Rational where
---  pretty r      = rational r
-
-instance (Pretty a,Pretty b) => Pretty (a,b) where
-  pretty (x,y)  = tupled [pretty x, pretty y]
-
--- instance (Pretty a,Pretty b,Pretty c) => Pretty (a,b,c) where
---   pretty (x,y,z)= tupled [pretty x, pretty y, pretty z]
-
-instance Pretty a => Pretty (Maybe a) where
-  pretty Nothing        = empty
-  pretty (Just x)       = pretty x
-
 
 
 -----------------------------------------------------------
