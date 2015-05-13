@@ -40,16 +40,37 @@ infixr 6 |+|, |++|
 |||     hello
 |||     world
 |||
-abstract
-data Doc        = Empty
-                | Char' Char           -- invariant: char is not '\n'
-                | Text Int String      -- invariant: text doesn't contain '\n'
-                | Line Bool            -- True <=> when undone by group, do not insert a space
-                | Cat Doc Doc
-                | Nest Int Doc
-                | Union Doc Doc         -- invariant: first lines of first doc longer than the first lines of the second doc
-                | Column  (Int -> Doc)
-                | Nesting (Int -> Doc)
+abstract data Doc : Type where
+  Empty : Doc
+
+  ||| A single character document with the invariant that the
+  ||| character is not a newline.
+  Char' : Char -> Doc
+
+  ||| A document containing a string (plus its length). Invariant:
+  ||| the string doesn't contain a newline.
+  Text : Int -> String -> Doc
+
+  ||| A newline document.
+  |||
+  ||| @ nospace If True, then when this newline is undone by group, do
+  ||| not insert a space
+  Line : (nospace : Bool) -> Doc
+
+  Cat : Doc -> Doc -> Doc
+  Nest : Int -> Doc -> Doc
+
+  ||| One document or another.
+  |||
+  ||| Invariant: first lines of first doc longer than the first lines
+  ||| of the second doc
+  |||
+  ||| @ d1 the document with the longer first lines
+  ||| @ d2 the document with the shorter first lines
+  Union : (d1, d2 : Doc) -> Doc
+
+  Column  : (Int -> Doc) -> Doc
+  Nesting : (Int -> Doc) -> Doc
 
 
 ||| The data type `SimpleDoc` represents rendered documents and is
@@ -73,7 +94,7 @@ data Docs   = Nil
 -- Primitives
 -----------------------------------------------------------
 
--- | The empty document is, indeed, empty. Although `empty` has no
+||| The empty document is, indeed, empty. Although `empty` has no
 ||| content, it does have a 'height' of 1 and behaves exactly like
 ||| `(text "")` (and is therefore not a unit of `|$|`).
 empty : Doc
@@ -234,24 +255,31 @@ indent i d      = hang i (text (spaces i) `beside` d)
 ||| The document `lparen` contains a left parenthesis, "(".
 lparen : Doc
 lparen          = char '('
+
 ||| The document `rparen` contains a right parenthesis, ")".
 rparen : Doc
 rparen          = char ')'
+
 ||| The document `langle` contains a left angle, "<".
 langle : Doc
 langle          = char '<'
+
 ||| The document `rangle` contains a right angle, ">".
 rangle : Doc
 rangle          = char '>'
+
 ||| The document `lbrace` contains a left brace, "{".
 lbrace : Doc
 lbrace          = char '{'
+
 ||| The document `rbrace` contains a right brace, "}".
 rbrace : Doc
 rbrace          = char '}'
+
 ||| The document `lbracket` contains a left square bracket, "[".
 lbracket : Doc
 lbracket        = char '['
+
 ||| The document `rbracket` contains a right square bracket, "]".
 rbracket : Doc
 rbracket        = char ']'
@@ -263,23 +291,29 @@ squote          = char '\''
 ||| The document `dquote` contains a double quote, '"'.
 dquote : Doc
 dquote          = char '"'
+
 ||| The document `semi` contains a semi colon, ";".
 semi : Doc
 semi            = char ';'
+
 ||| The document `colon` contains a colon, ":".
 colon : Doc
 colon           = char ':'
+
 ||| The document `comma` contains a comma, ",".
 comma : Doc
 comma           = char ','
+
 ||| The document `space` contains a single space, " ".
 |||
 ||| > x |++| y   = x |+| space |+| y
 space : Doc
 space           = char ' '
+
 ||| The document `dot` contains a single dot, ".".
 dot : Doc
 dot             = char '.'
+
 ||| The document `backslash` contains a backslash, "\\".
 backslash : Doc
 backslash       = char '\\'
