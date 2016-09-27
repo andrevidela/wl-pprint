@@ -1,7 +1,8 @@
 ||| An Idris port of the Wadler-Leijen pretty-printer.
 module Text.PrettyPrint.Leijen
 
-%access public
+%access public export
+%access export
 %default total
 
 ||| Zip a Stream and a List together.
@@ -40,7 +41,7 @@ infixr 6 |+|, |++|
 |||     hello
 |||     world
 |||
-abstract data Doc : Type where
+export data Doc : Type where
   Empty : Doc
 
   ||| A single character document with the invariant that the
@@ -655,7 +656,7 @@ integer i       = text (show i)
 
 ||| The document `(float f)` shows the literal float `f` using
 ||| 'text'.
-float : Float -> Doc
+float : Double -> Doc
 float f         = text (show f)
 
 ||| The document `(double d)` shows the literal double `d` using
@@ -678,14 +679,14 @@ rational r      = text (show r)
 ||| propositional equality of the underlying Doc syntax tree, but
 ||| rather with respect to the equality of the result of rendering. So
 ||| it's "morally" a `Semigroup`.
-instance Semigroup Doc where
+Semigroup Doc where
   (<+>) = beside
 
 ||| Note that the neutral element is not a left and right unit with
 ||| respect to propositional equality of the underlying Doc syntax
 ||| tree, but rather with respect to the equality of the result of
 ||| rendering. So it's "morally" a `Monoid`.
-instance Monoid Doc where
+Monoid Doc where
   neutral = empty
 
 
@@ -771,7 +772,7 @@ fits w (SLine _ _)              = if w < 0 then False else True
 ||| `ribbonfrac` should be between `0.0` and `1.0`. If it is lower or
 ||| higher, the ribbon width will be 0 or `width` respectively.
 covering
-renderPretty : Float -> Int -> Doc -> SimpleDoc
+renderPretty : Double -> Int -> Doc -> SimpleDoc
 renderPretty rfrac w x
     = best 0 0 (Cons 0 x Nil)
     where
@@ -880,7 +881,8 @@ displayIO handle simpleDoc
 -----------------------------------------------------------
 -- default pretty printers: show, putDoc and hPutDoc
 -----------------------------------------------------------
-instance Show Doc where
+covering
+Show Doc where
   show doc       = displayS (renderPretty 0.4 80 doc) ""
 
 {-
