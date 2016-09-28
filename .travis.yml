@@ -1,0 +1,2 @@
+language: nix
+script: nix-shell -A wl-pprint --command "idris --build wl-pprint.ipkg && idris --testpkg wl-pprint.ipkg"
