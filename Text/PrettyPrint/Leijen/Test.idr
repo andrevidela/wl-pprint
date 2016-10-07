@@ -4,6 +4,7 @@ import System
 
 import Text.PrettyPrint.Leijen
 
+%access public export
 %default total
 
 --%access private
@@ -77,4 +78,3 @@ runTest = traverse_ (uncurry doTest)
             , (test3, "((lambda\n  (f) (f f))\n (lambda\n  (f) (f f)))")
             , (test4, "((lambda\n  (f)\n  (f f))\n (lambda\n  (f)\n  (f f)))")
             ]
-
