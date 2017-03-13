@@ -6,6 +6,7 @@ module Text.PrettyPrint.Leijen.Class
 import Text.PrettyPrint.Leijen
 
 %default total
+%access public export
 
 -----------------------------------------------------------
 -- overloading "pretty"
