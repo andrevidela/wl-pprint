@@ -168,8 +168,8 @@ group x         = Union (flatten x) x
         flatten (Nest i x)      = Nest i (flatten x)
         flatten (Line break)    = if break then Empty else Text 1 " "
         flatten (Union x _)     = flatten x
-        flatten (Column f)      = Column (flatten . f)
-        flatten (Nesting f)     = Nesting (flatten . f)
+        flatten (Column f)      = Column (\i => flatten $ f i)
+        flatten (Nesting f)     = Nesting (\i => flatten $ f i)
         flatten other           = other                     --Empty,Char,Text
 
 
