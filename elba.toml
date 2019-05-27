@@ -1,0 +1,15 @@
+[package]
+name = "shayan-najd/wl-pprint"
+version = "0.1.0"
+authors = []
+
+[dependencies]
+
+[targets.lib]
+path = "."
+name = "wl-pprint"
+mods = [ "Text.PrettyPrint.Leijen"
+       , "Text.PrettyPrint.Leijen.Class"
+       , "Text.PrettyPrint.Leijen.Test"
+       ]
+
